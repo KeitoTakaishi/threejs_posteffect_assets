@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+        <title>CustomShader01</title>
+        <meta charset='utf-8'>
+        <style>
+            body {
+			background-color: #000;
+			margin: 0px;
+			overflow: hidden;
+		}
+        </style>
+    </head>
+
+    <body>
+        <div id='container'></div>
+        <!-- <script src='../lib/three.min.js'></script> -->
+        <script src='./three.min.js'></script>
+        <script src='../lib/dat.gui.min.js'></script>
+        <script src='../lib/stats.min.js'></script>
+        <script src='../lib/postprocessing/EffectComposer.js'></script>
+        <script src='../lib/postprocessing/RenderPass.js'></script>
+        <script src='../lib/postprocessing/ShaderPass.js'></script>
+        <script src='../lib/postprocessing/MaskPass.js'></script>
+        <script src='../lib/shaders/CopyShader.js'></script>
+        <script src='../lib/shaders/FilmShader.js'></script>
+        
+        <script src="./myShaders/invert.js"></script>
+        <script src="./myShaders/symmetryRotate.js"></script>
+        <script src="./threejsUtils.js"></script>
+
+
+        <script>
+            let cam, scene, renderer;
+            var video, videoTexture, videoMaterial;
+            let invertPass;
+            let symmetryRotatePass;
+            
+            let gui;
+            let invertParams;
+            let symmetryRotateParams;
+            let composer;
+            let time = 0.0;
+            init();
+            anim();
+
+            function init(){
+                initGraphics();
+                initMaterials();
+                initModels();
+                initStats();
+                initGUI();
+                initPass();
+                onToggleShaders();
+            }
+            
+            //-----------------------------------------------------------------------------
+            function initMaterials(){
+                video = document.createElement('video');
+                video.loop = true;
+                video.muted = true;
+                video.src = "assets/movie03.mp4";
+                video.play();
+
+                videoTexture = new THREE.Texture(video);
+                videoTexture.minFilter = THREE.LinearFilter;
+                videoTexture.magFilter = THREE.LinearFilter;
+                videoMaterial = new THREE.MeshBasicMaterial({
+                    color: 0xFFFFFF,
+                    map: videoTexture,
+                });
+            }
+
+            //-----------------------------------------------------------------------------
+            function initModels(){
+                var planeGeometry = new THREE.PlaneGeometry(1080, 720, 30, 30);
+                var plane = new THREE.Mesh(planeGeometry, videoMaterial);
+                scene.add(plane);
+                plane.z = 0;
+                plane.scale.x = plane.scale.y = 1.45;
+            }
+            //-----------------------------------------------------------------------------
+            function initGUI(){
+                gui = new dat.GUI();
+                invertParams = {
+                    enable : true
+                };
+
+                symmetryRotateParams = {
+                    enable : true 
+                };
+
+                gui.add(invertParams, 'enable').onChange(onToggleShaders);
+                gui.add(symmetryRotateParams, 'enable').onChange(onToggleShaders);
+            }
+            //-----------------------------------------------------------------------------
+            function initPass(){
+                renderPass = new THREE.RenderPass(scene, cam);
+                invertPass = new THREE.ShaderPass(THREE.Invert);
+                symmetryRotatePass = new THREE.ShaderPass(THREE.symmetryRotate);
+                copyPass = new THREE.ShaderPass(THREE.CopyShader);
+            }
+            //-----------------------------------------------------------------------------
+            function onToggleShaders(){
+                composer = new THREE.EffectComposer(renderer);
+                composer.addPass(renderPass);
+                
+                if(invertParams.enable){
+                    composer.addPass(invertPass);
+                }
+
+                if(symmetryRotateParams.enable){
+                    composer.addPass(symmetryRotatePass);
+                }
+
+                composer.addPass(copyPass);
+                copyPass.renderToScreen = true;
+            }
+
+            //-----------------------------------------------------------------------------
+            function anim(){
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    if (videoTexture) videoTexture.needsUpdate = true;
+                }
+
+                time += 0.1;
+                symmetryRotatePass.uniforms['time'].value = time;
+
+                requestAnimationFrame(anim);
+                composer.render();
+            }
+        </script>
+    </body>
+</html>
