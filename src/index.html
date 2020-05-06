@@ -27,6 +27,7 @@
         <script src="./myShaders/invert.js"></script>
         <script src="./myShaders/symmetryRotate.js"></script>
         <script src="./myShaders/rgbShift.js"></script>
+        <script src="./myShaders/noise.js"></script>
         <script src="./threejsUtils.js"></script>
 
 
@@ -39,12 +40,14 @@
             let invertPass;
             let symmetryRotatePass;
             let rgbShiftPass;
+            let noisePass;
             
             let gui;
             //ShaderParams
             let invertParams;
             let symmetryRotateParams;
             let rbgShiftParams;
+            let noiseParams;
 
             let composer;
             let time = 0.0;
@@ -104,11 +107,18 @@
                     rShift : 0.01,
                     gShift : -0.02,
                     bShift : 0.0,
-                };                
+                };  
+                
+                noiseParams = {
+                    enable : false,
+                    exposure : 1.0,
+                }
 
                 let f1 = gui.addFolder('invert');
                 let f2 = gui.addFolder('symmetryRotate');
                 let f3 = gui.addFolder('rbgShiftParams');
+                let f4 = gui.addFolder('noiseParams');
+            
 
                 f1.add(invertParams, 'enable').onChange(onToggleShaders);
                 f2.add(symmetryRotateParams, 'enable').onChange(onToggleShaders);
@@ -116,6 +126,8 @@
                 f3.add(rbgShiftParams, 'rShift', -0.3, 0.3).step(0.01).listen().name('r-shift').onChange(onChangeonParams);
                 f3.add(rbgShiftParams, 'gShift', -0.3, 0.3).step(0.01).listen().name('g-shift').onChange(onChangeonParams);
                 f3.add(rbgShiftParams, 'bShift', -0.3, 0.3).step(0.01).listen().name('b-shift').onChange(onChangeonParams);
+                f4.add(noiseParams, 'enable').onChange(onToggleShaders);
+                f4.add(noiseParams, 'exposure', 0.0, 10.0).step(0.01).listen().name('exposure').onChange(onChangeonParams);
             }
             //-----------------------------------------------------------------------------
             function initPass(){
@@ -123,6 +135,7 @@
                 invertPass = new THREE.ShaderPass(THREE.Invert);
                 symmetryRotatePass = new THREE.ShaderPass(THREE.symmetryRotate);
                 rgbShiftPass = new THREE.ShaderPass(THREE.rgbShift);
+                noisePass = new THREE.ShaderPass(THREE.noise);
                 copyPass = new THREE.ShaderPass(THREE.CopyShader);
             }
             //-----------------------------------------------------------------------------
@@ -140,7 +153,17 @@
 
                 if(rbgShiftParams.enable){
                     composer.addPass(rgbShiftPass);
+                    rgbShiftPass.uniforms['rshift'].value = rbgShiftParams.rShift;
+                    rgbShiftPass.uniforms['gshift'].value = rbgShiftParams.gShift;
+                    rgbShiftPass.uniforms['bshift'].value = rbgShiftParams.bShift;
                 }
+
+                if(noiseParams.enable){
+                    composer.addPass(noisePass);
+                    noisePass.uniforms['exposure'].value = noiseParams.exposure;
+                }
+
+                
 
                 composer.addPass(copyPass);
                 copyPass.renderToScreen = true;
@@ -150,6 +173,8 @@
                 rgbShiftPass.uniforms['rshift'].value = rbgShiftParams.rShift;
                 rgbShiftPass.uniforms['gshift'].value = rbgShiftParams.gShift;
                 rgbShiftPass.uniforms['bshift'].value = rbgShiftParams.bShift;
+
+                noisePass.uniforms['exposure'].value = noiseParams.exposure;
             }
             //-----------------------------------------------------------------------------
             function anim(){
@@ -159,6 +184,7 @@
 
                 time += 0.1;
                 symmetryRotatePass.uniforms['time'].value = time;
+                noisePass.uniforms['time'].value = time;
 
                 requestAnimationFrame(anim);
                 composer.render();
