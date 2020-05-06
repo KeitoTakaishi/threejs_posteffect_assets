@@ -26,18 +26,26 @@
         
         <script src="./myShaders/invert.js"></script>
         <script src="./myShaders/symmetryRotate.js"></script>
+        <script src="./myShaders/rgbShift.js"></script>
         <script src="./threejsUtils.js"></script>
+
 
 
         <script>
             let cam, scene, renderer;
             var video, videoTexture, videoMaterial;
+            
+            //Pass
             let invertPass;
             let symmetryRotatePass;
+            let rgbShiftPass;
             
             let gui;
+            //ShaderParams
             let invertParams;
             let symmetryRotateParams;
+            let rbgShiftParams;
+
             let composer;
             let time = 0.0;
             init();
@@ -81,22 +89,40 @@
             //-----------------------------------------------------------------------------
             function initGUI(){
                 gui = new dat.GUI();
+
+                
                 invertParams = {
-                    enable : true
+                    enable : false
                 };
 
                 symmetryRotateParams = {
-                    enable : true 
+                    enable : false
                 };
 
-                gui.add(invertParams, 'enable').onChange(onToggleShaders);
-                gui.add(symmetryRotateParams, 'enable').onChange(onToggleShaders);
+                rbgShiftParams = {
+                    enable : false,
+                    rShift : 0.01,
+                    gShift : -0.02,
+                    bShift : 0.0,
+                };                
+
+                let f1 = gui.addFolder('invert');
+                let f2 = gui.addFolder('symmetryRotate');
+                let f3 = gui.addFolder('rbgShiftParams');
+
+                f1.add(invertParams, 'enable').onChange(onToggleShaders);
+                f2.add(symmetryRotateParams, 'enable').onChange(onToggleShaders);
+                f3.add(rbgShiftParams, 'enable').onChange(onToggleShaders);
+                f3.add(rbgShiftParams, 'rShift', -0.3, 0.3).step(0.01).listen().name('r-shift').onChange(onChangeonParams);
+                f3.add(rbgShiftParams, 'gShift', -0.3, 0.3).step(0.01).listen().name('g-shift').onChange(onChangeonParams);
+                f3.add(rbgShiftParams, 'bShift', -0.3, 0.3).step(0.01).listen().name('b-shift').onChange(onChangeonParams);
             }
             //-----------------------------------------------------------------------------
             function initPass(){
                 renderPass = new THREE.RenderPass(scene, cam);
                 invertPass = new THREE.ShaderPass(THREE.Invert);
                 symmetryRotatePass = new THREE.ShaderPass(THREE.symmetryRotate);
+                rgbShiftPass = new THREE.ShaderPass(THREE.rgbShift);
                 copyPass = new THREE.ShaderPass(THREE.CopyShader);
             }
             //-----------------------------------------------------------------------------
@@ -112,10 +138,19 @@
                     composer.addPass(symmetryRotatePass);
                 }
 
+                if(rbgShiftParams.enable){
+                    composer.addPass(rgbShiftPass);
+                }
+
                 composer.addPass(copyPass);
                 copyPass.renderToScreen = true;
             }
-
+            //-----------------------------------------------------------------------------
+            function onChangeonParams(){
+                rgbShiftPass.uniforms['rshift'].value = rbgShiftParams.rShift;
+                rgbShiftPass.uniforms['gshift'].value = rbgShiftParams.gShift;
+                rgbShiftPass.uniforms['bshift'].value = rbgShiftParams.bShift;
+            }
             //-----------------------------------------------------------------------------
             function anim(){
                 if (video.readyState === video.HAVE_ENOUGH_DATA) {
