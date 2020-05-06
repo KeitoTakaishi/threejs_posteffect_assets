@@ -6,5 +6,6 @@
 - Symmetry Rotate
 ![demo](./ref/symmetryrotate.gif)
 - RGB Shift
-
 ![demo](./ref/rgbshift.gif)
+- Noise
+![demo](./ref/noise.gif)
