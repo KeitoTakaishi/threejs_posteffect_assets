@@ -19,13 +19,14 @@ THREE.noise = {
         "varying vec2 vUv;",
 
         "float random (vec2 st) {",
-            "return fract(sin(dot(st.xy, vec2(12.9898,78.233)))*43758.5453123);",
+            "return fract(sin(dot(st ,vec2(12.9898,78.233))) * 43758.5453);",
         "}",
 
         "void main() {",
         "vec2 uv = vUv;",
         "vec4 col = texture2D(tDiffuse,  uv);",
-        "col.rgb = col.rgb * random(vec2(uv) + vec2(time, time)) * exposure;",
+
+        "col.rgb = col.rgb * random(fract(vec2(uv) - vec2(time, time))) * exposure;",
         "gl_FragColor = col;",
         "}"
 

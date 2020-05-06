@@ -1,4 +1,4 @@
-THREE.Invert = {
+THREE.Template = {
     uniforms: {
         "tDiffuse": {type: "t", value: null},
     },
