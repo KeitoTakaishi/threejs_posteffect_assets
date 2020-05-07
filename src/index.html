@@ -28,19 +28,23 @@
         <script src="./myShaders/symmetryRotate.js"></script>
         <script src="./myShaders/rgbShift.js"></script>
         <script src="./myShaders/noise.js"></script>
+        <script src="./myShaders/colorTemp.js"></script>
+
         <script src="./threejsUtils.js"></script>
+        
 
 
 
         <script>
             let cam, scene, renderer;
-            var video, videoTexture, videoMaterial;
-            
+            let video, videoTexture, videoMaterial;
+            let colorTempImg, colorTempTex; 
             //Pass
             let invertPass;
             let symmetryRotatePass;
             let rgbShiftPass;
             let noisePass;
+            let colorTemperaturePass;
             
             let gui;
             //ShaderParams
@@ -48,6 +52,7 @@
             let symmetryRotateParams;
             let rbgShiftParams;
             let noiseParams;
+            let colorTemperatureParams;
 
             let composer;
             let time = 0.0;
@@ -55,6 +60,7 @@
             anim();
 
             function init(){
+                loadImages();
                 initGraphics();
                 initMaterials();
                 initModels();
@@ -63,6 +69,18 @@
                 initPass();
                 onToggleShaders();
             }
+            //-----------------------------------------------------------------------------
+            function loadImages(){
+                const texLoader = new THREE.TextureLoader();
+                texLoader.load('assets/tempture.png', 
+                texture => { // onLoad
+                    colorTempTex = texture;
+                    colorTempTex.minFilter = THREE.LinearFilter;
+                    colorTempTex.magFilter = THREE.LinearFilter;
+                    console.log(texture);
+                });
+            }
+            
             
             //-----------------------------------------------------------------------------
             function initMaterials(){
@@ -114,10 +132,16 @@
                     exposure : 1.0,
                 }
 
+                colorTemperatureParams = {
+                    enable : false,
+                    temperature : 0.0,
+                }
+
                 let f1 = gui.addFolder('invert');
                 let f2 = gui.addFolder('symmetryRotate');
                 let f3 = gui.addFolder('rbgShiftParams');
                 let f4 = gui.addFolder('noiseParams');
+                let f5 = gui.addFolder('colorTemperatureParams');
             
 
                 f1.add(invertParams, 'enable').onChange(onToggleShaders);
@@ -128,6 +152,9 @@
                 f3.add(rbgShiftParams, 'bShift', -0.3, 0.3).step(0.01).listen().name('b-shift').onChange(onChangeonParams);
                 f4.add(noiseParams, 'enable').onChange(onToggleShaders);
                 f4.add(noiseParams, 'exposure', 0.0, 10.0).step(0.01).listen().name('exposure').onChange(onChangeonParams);
+                f5.add(colorTemperatureParams, 'enable').onChange(onToggleShaders);
+                f5.add(colorTemperatureParams, 'temperature', 0.0, 1.0).step(0.01).listen().name('temperature').onChange(onChangeonParams);
+
             }
             //-----------------------------------------------------------------------------
             function initPass(){
@@ -137,6 +164,7 @@
                 rgbShiftPass = new THREE.ShaderPass(THREE.rgbShift);
                 noisePass = new THREE.ShaderPass(THREE.noise);
                 copyPass = new THREE.ShaderPass(THREE.CopyShader);
+                colorTemperaturePass = new THREE.ShaderPass(THREE.colorTemperature);
             }
             //-----------------------------------------------------------------------------
             function onToggleShaders(){
@@ -163,6 +191,12 @@
                     noisePass.uniforms['exposure'].value = noiseParams.exposure;
                 }
 
+                if(colorTemperatureParams.enable){
+                    composer.addPass(colorTemperaturePass);
+                    colorTemperaturePass.uniforms['temperatureTex'].value = colorTempTex;
+                    colorTemperaturePass.uniforms['temperature'].value = 1.0-colorTemperatureParams.temperature;   
+                }
+
                 
 
                 composer.addPass(copyPass);
@@ -175,6 +209,8 @@
                 rgbShiftPass.uniforms['bshift'].value = rbgShiftParams.bShift;
 
                 noisePass.uniforms['exposure'].value = noiseParams.exposure;
+                colorTemperaturePass.uniforms['temperature'].value = 1.0-colorTemperatureParams.temperature;   
+
             }
             //-----------------------------------------------------------------------------
             function anim(){

@@ -9,3 +9,5 @@
 ![demo](./ref/rgbshift.gif)
 - Noise
 ![demo](./ref/noise.gif)
+- ColorTemperature
+![demo](./ref/colortemperature.gif)
